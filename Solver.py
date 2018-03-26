@@ -1,9 +1,45 @@
 import numpy as np
+from Formula import Formula
 
 
-def first_assignment():
+def first_assignment(formula, a, unchecked):
     #order with number of variables and hamming distance with common variables considered
-    return
+    # todo try to find a way to use hamming distance to use the less amount of passage to find UNSAT
+
+    formula.sort(key = lambda sublist : (list(np.abs(sublist))).count(1), reverse = False)
+
+    i = 0
+    for cl in formula:
+
+        #if an assignemnt is forced
+        if (list(np.abs(cl))).count(1):
+            #which variables is forced?
+            i = np.abs(cl).IndexOf(1)
+
+            #if it hasn't been assigned, assign
+            if a[i] == 0:
+                a[i] = cl[i]
+                unchecked.remove(i)
+
+            #if it has been assigned to opposite value, contradiction, UNSAT
+            elif a[i] != cl[i]:
+                return False, [], []
+
+        else:
+            #get if cl is sat
+            r = np.multiply(cl, a)
+
+            #this is the next cl that must be satisfied
+            if 1 not in r:
+                break
+        i = i + 1
+
+    #launch next assignemnt
+    next_node = sol_node(a, i)
+
+    r = np.multiply(formula, a)
+
+    return next_node.find_contradiction_or_learn(formula, r, unchecked)
 
 def next_round(a, formula, r, unchecked):
     for i in unchecked:
@@ -11,14 +47,19 @@ def next_round(a, formula, r, unchecked):
         if 1 not in cl:
             if 0 in cl:
                 next_node = sol_node(a, i)
-                return next_node.find_contradiction_or_learn(formula, i, r, unchecked)
+                return next_node.find_contradiction_or_learn(formula, r, unchecked)
             else:
                 return False, [k for k, x in enumerate(cl) if x == -1]
     return True, a
 
 
-def solve():
-    first_assignment()
+def solve(formula):
+
+    #assignment zero is empty
+    a = np.zeros(formula.v)
+    unchecked = range(len(formula.cmatrix))
+
+    isModel, model, something = first_assignment(formula.cmatrix, a, unchecked) #maybe something is useless
 
 
 class sol_node:
@@ -30,13 +71,14 @@ class sol_node:
         self.Tnode = ''
         self.Fnode = ''
     #todo unchecked = range(len(r))
-    def find_contradiction_or_learn(self, formula, start_index, r, unchecked):
+    def find_contradiction_or_learn(self, formula, r, unchecked):
         assigned = False
         model = []
         #todo introduce weight
 
         j = 0
-        k = start_index
+        k = self.v_a
+        start_index = self.v_a
         #for each clauses compared with the assignment made
         for cl in r[start_index:]:
             if cl.count(1) == 0: #assignment does not satisfy this formula
@@ -126,7 +168,7 @@ class sol_node:
             if 0 in rs:
                 i = rs.index(0)
                 next_node = sol_node(self.a, i)
-                return next_node.find_contradiction_or_learn(formula, start_index, r, unchecked)
+                return next_node.find_contradiction_or_learn(formula, r, unchecked)
 
             else:
                 indexes = [i for i, x in enumerate(r) if x == -1]
