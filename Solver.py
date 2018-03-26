@@ -1,6 +1,26 @@
 import numpy as np
 
 
+def first_assignment():
+    #order with number of variables and hamming distance with common variables considered
+    return
+
+def next_round(a, formula, r, unchecked):
+    for i in unchecked:
+        cl = r[i]
+        if 1 not in cl:
+            if 0 in cl:
+                next_node = sol_node(a, i)
+                return next_node.find_contradiction_or_learn(formula, i, r, unchecked)
+            else:
+                return False, [k for k, x in enumerate(cl) if x == -1]
+    return True, a
+
+
+def solve():
+    first_assignment()
+
+
 class sol_node:
     def __init__(self, a, i):
 
@@ -9,10 +29,9 @@ class sol_node:
         self.inducted = []
         self.Tnode = ''
         self.Fnode = ''
-
-    def find_contradiction_or_learn(self, formula, start_index, r):
+    #todo unchecked = range(len(r))
+    def find_contradiction_or_learn(self, formula, start_index, r, unchecked):
         assigned = False
-        unchecked = []
         model = []
         #todo introduce weight
 
@@ -20,39 +39,43 @@ class sol_node:
         k = start_index
         #for each clauses compared with the assignment made
         for cl in r[start_index:]:
-            if r. count(1) == 0:
-                if (assigned):
-                    self.go_next_node(formula, k, r)
-                elif cl[self.v_a] == 0:
+            if cl.count(1) == 0: #assignment does not satisfy this formula
+                if 0 in cl:
+                    return False,  [i for i, x in enumerate(cl) if x == -1]
+                #todo try to implement exception to optimize
+                if cl[self.v_a] == 0 and formula[start_index + j][self.v_a] != 0: #we can assign something to self.va
                     assigned = True
                     self.a[self.v_a] = formula[start_index + j][self.v_a]
                     r = np.multiply(formula, self.a)
                     r = self.find_inductions(formula, r)
-                    is_model, var = self.go_next_node(formula, k, r)
+                    is_model, var = self.go_next_node(formula, k, r, unchecked)
 
                     if is_model:
                         model = var
-                        break
+                        return True, model
                     elif self.v_a in var:
-                        assigned = True
+                        #todo implement clause learning here
                         self.a[self.v_a] = - formula[start_index + j][self.v_a]
                         r = np.multiply(formula, self.a)
                         r = self.find_inductions(formula, r)
-                        is_model, var = self.go_next_node(formula, k, r)
+                        is_model, var = self.go_next_node(formula, k, r, unchecked)
                         if is_model:
                             model = var
                             break
                         else:
-                            return
-
-
-                else:
-                    unchecked.append(j)
+                            return is_model, var
+                    else:
+                        return is_model, var
+            else:
+                unchecked.remove(j)
 
             j += 1
             k += 1
 
-        return True
+        if len(unchecked) != 0:
+            next_round(self.a, formula, r, unchecked)
+
+        return True, self.a
 
     def find_inductions(self, formula, r):
         roots = []
@@ -64,8 +87,8 @@ class sol_node:
             added = False
             current_index = ''
 
-            if r[i].count(1) == 0:
-                if r[i].count(0) == 0:
+            if 1 not in r[i]:
+                if 0 not in r[i]:
                     return #todo specify condition of return
                 else:
                     for j in range(len(roots)):
@@ -78,7 +101,7 @@ class sol_node:
                                 roots[j] = root
                             else:
                                 roots[current_index].addson(roots[j])
-                                indexes_removed. append(i)
+                                indexes_removed.append(i)
                         elif(np.multiply(roots[j].r_cl, r[i])).count(0) == r[i].count(0):
                             roots[j].addson(induction_node(i, formula[i], r[i], roots[j]))
 
@@ -88,28 +111,26 @@ class sol_node:
                 for i in indexes_removed:
                     del roots[i]
 
-        for r in roots:
+        for ro in roots:
             try:
-                r.induct(self.a)
+                ro.induct(self.a)
             except Exception as e:
                 raise e
 
+        return np.multiply(formula, self.a)
 
 
+    def go_next_node(self, formula, start_index, r, unchecked):
+        #todo this function can be optimized, maybe deleted
+        for rs in r:
+            if 0 in rs:
+                i = rs.index(0)
+                next_node = sol_node(self.a, i)
+                return next_node.find_contradiction_or_learn(formula, start_index, r, unchecked)
 
-
-
-
-    def go_next_node(self, formula, start_index, r):
-        try:
-            i = r.index(0)
-            next_node = sol_node(self.a, i)
-            is_model, var = next_node.find_contradiction_or_learn(formula, start_index, r)
-            return is_model, var
-
-        except ValueError:
-            indexes = [i for i, x in enumerate(r) if x == -1]
-            return False, indexes
+            else:
+                indexes = [i for i, x in enumerate(r) if x == -1]
+                return False, indexes
 
 
 class induction_node:
@@ -145,7 +166,7 @@ class induction_node:
 
     def induct(self, a):
         self.r_cl = np.multiply(a, self.cl)
-        if(self.r_cl.count(1) != 0):
+        if 1 in self.r_cl:
             return
         else:
             if self.r_cl.count(0) == 1:
@@ -153,8 +174,7 @@ class induction_node:
                 a[i] = self.cl[i]
                 for son in self.sons:
                     son.induct(a)
-            elif self.r_cl.count(0) == 0:
+            elif 0 not in self.r_cl:
                 raise Exception
-
 
 
