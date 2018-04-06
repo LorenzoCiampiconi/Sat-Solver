@@ -1,9 +1,9 @@
 from Formula import Formula
 
 #Define path and useful variables such as the separator used in the file to be queried
-read_path = "C:/Users/Lorenzo/Documents/Polimi/Singapore/Knowledge-Based Systems/Kuldeep Project"
-output_path = "C:/Users/Lorenzo/Documents/Polimi/Singapore/Knowledge-Based Systems/Kuldeep Project/Output"
-query_list_file_name = "input-formula"
+read_path = "/home/lorenzoc/Scrivania/Sat-Solver/"
+output_path = "/home/lorenzoc/Scrivania/Sat-Solver/"
+query_list_file_name = "input"
 output_file_name = "outputB.txt"
 sep = "\t"
 
@@ -20,12 +20,13 @@ def read_files():
 
         for line in input_file:
             if line.startswith("c"):
-                print(line.partition("c ")[2])
+                print(line.partition("c")[2])
             elif line.startswith("p cnf"):
                 words = line.split(" ")
                 formula.v = int(words[2])
+                formula.nc = int(words[3])
             else :
-                clause = line.partition("0")[0]
+                clause = line.partition(" 0")[0]
                 clause = clause.split()
                 formula.c.append(list(map(int, clause)))
 
