@@ -1,4 +1,4 @@
-import numpy
+
 
 class Formula:
     def __init__(self):
