@@ -3,7 +3,7 @@ from Formula import Formula
 #Define path and useful variables such as the separator used in the file to be queried
 read_path = "/home/lorenzoc/Scrivania/Sat-Solver/"
 output_path = "/home/lorenzoc/Scrivania/Sat-Solver/"
-query_list_file_name = "input"
+query_list_file_name = "input-3"
 output_file_name = "outputB.txt"
 sep = "\t"
 
