@@ -3,6 +3,7 @@ import logic_functions as lf
 import assignments_graph as ag
 import cdcl
 
+NOT_LEARNT = False
 
 class induction_node:
     def __init__(self, i_cl, cl):
@@ -32,7 +33,7 @@ def generate_ind_graph(cl):
 
     # generate an induction tree to optimize induction
     for cl_i in cl: # must be careful to grant order
-        add_to_induction_tree(induction_node(cl_i, cl_i), induction_roots)
+        add_to_induction_graph(induction_node(cl_i, cl_i), induction_roots, NOT_LEARNT)
 
     return induction_roots
 
@@ -87,7 +88,7 @@ def adjust_ind_graph(var, inductions_roots):
 
     for item in added:
 
-        add_to_induction_tree(item, inductions_roots)
+        add_to_induction_graph(item, inductions_roots, NOT_LEARNT)
 
 
     if adjusted:
@@ -101,8 +102,7 @@ def adjust_ind_graph(var, inductions_roots):
                 if set(np.abs(root.var)).issubset(np.abs(root_2.var)):
                     if root not in temp:
                         temp.append(root)
-                        add_to_induction_tree(root_2, root.sons)
-
+                        add_to_induction_graph(root_2, root.sons, NOT_LEARNT)
                         for r in inductions_roots:
                             if root_2 in r.common:
                                 r.common.remove(root_2)
@@ -111,7 +111,7 @@ def adjust_ind_graph(var, inductions_roots):
                 elif set(np.abs(root_2.var)).issubset(np.abs(root.var)):
                     if root_2 not in temp:
                         temp.append(root)
-                        add_to_induction_tree(root, root_2.sons)
+                        add_to_induction_graph(root, root_2.sons, NOT_LEARNTs)
 
                         for r in inductions_roots:
                             if root in r.common:
@@ -161,7 +161,7 @@ def induct_through_tree(root, a, r_a, n_a, l):
 
     elif len(root.var) == 1:
 
-        # it has been caused that all the opposite assignment to his variables
+        # it has been caused by all the opposite assignment to his variables
         if abs(root.var[0]) in n_a:
             re_added = []
 
@@ -196,7 +196,7 @@ def induct_through_tree(root, a, r_a, n_a, l):
             r = lf.assign_to_clause(root.cl, a)
 
             # generation of the object that will backtrack until desired level with learnt clause
-            backtrack = cdcl.learning_clause(r, r_a)
+            backtrack = cdcl.learning_clause(r, r_a, root.cl)
 
             print(backtrack.level)
 
@@ -209,7 +209,7 @@ def induct_through_tree(root, a, r_a, n_a, l):
         r = lf.assign_to_clause(root.cl, a)
 
         # generation of the object that will backtrack until desired level with learnt clause
-        backtrack = cdcl.learning_clause(r, r_a)
+        backtrack = cdcl.learning_clause(r, r_a, root.cl)
 
         print(backtrack.level)
 
@@ -219,9 +219,7 @@ def induct_through_tree(root, a, r_a, n_a, l):
     return True, root, []
 
 
-
-
-def add_to_induction_tree(node, induction_roots):
+def add_to_induction_graph(node, induction_roots, learnt):
 
     # temporary list for adding to roots
     temp = []
@@ -233,13 +231,13 @@ def add_to_induction_tree(node, induction_roots):
     for root in induction_roots:
 
         if set(np.abs(root.var)).issubset(np.abs(node.var)):
-            add_to_induction_tree(node, root.sons)
+            add_to_induction_graph(node, root.sons, learnt)
             added = True
             break
 
         elif set(np.abs(node.var)).issubset(np.abs(root.var)):
             temp.append(root)
-            add_to_induction_tree(root, node.sons)
+            add_to_induction_graph(root, node.sons, NOT_LEARNT)
 
 
         elif any(var_i in node.var for var_i in root.var):
@@ -251,7 +249,11 @@ def add_to_induction_tree(node, induction_roots):
         induction_roots.remove(r_node)
 
     if not added:
-        induction_roots.append(node)
+
+        if learnt:
+            induction_roots.insert(0, node)
+        else:
+            induction_roots.append(node)
 
         for root in commons:
             node.common.append(root)

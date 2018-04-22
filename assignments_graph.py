@@ -5,8 +5,21 @@ class assignment_node:
         self.level = l
         self.var = var
         self.causes = causes
+        self.clause = causes
+        self.clause.append(var)
+
+        # this sort is needed to compare same clause that can be saved in different ways
+        self.clause.sort(key = lambda var : abs(var), reverse = False)
+
         self.causes_list = []
         self.caused_list = []
+
+    def is_root(self):
+
+        if self.causes:
+            return True
+        else:
+            return False
 
     def search_caused(self, node, i):
         """

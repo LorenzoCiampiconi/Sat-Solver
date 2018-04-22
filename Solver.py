@@ -6,6 +6,7 @@ import assignments_graph as ag
 from cdcl import backjump_pack
 from induction_graph import induction_node
 
+NO_MODEL = []
 
 def solve(formula):
     # variables not yet assigned
@@ -47,33 +48,42 @@ def first_assignment(cl, n_a, r_a, checked):
 
     # the order grants that
 
-    for cl_i in cl:
-        # if an assignment is forced
-        if len(cl_i) == 1:
 
-            # which variables is forced and with what value?
-            val = cl_i[0]
+    # if an assignment is forced
+    if len(cl[0]) == 1:
 
-            # if it hasn't been assigned, assign
-            if abs(val) not in np.abs(a):
-                # define assignment
-                ag.define_assignment(val, r_a, a, n_a, [], 0)
-                ig.adjust_ind_graph(abs(val), induction_trees)
-                ok, l = dp.induct(a, r_a, n_a, cl, 0, induction_trees)
+        # as the clauses are ordered by length
+        cl_i = cl[0]
 
-                if not ok:
-                    return False, [], []
+        # which variables is forced and with what value?
+        val = cl_i[0]
 
-            elif -1 * val in a:
-                # during the assignment of all the "single" clause we have contradiction ---> UNSAT
-                return False, [], []
+        # if it hasn't been assigned, assign
+        if abs(val) not in np.abs(a):
 
-            break # remove loop, the induction function will grant that clause with single variables will assign
+            # define assignment
+            ag.define_assignment(val, r_a, a, n_a, [], 0)
 
-        else:
-            break
+            # adjust the graph after the assignment,
+            ig.adjust_ind_graph(abs(val), induction_trees)
 
-    return dp.in_depth_assignment(induction_trees[0].var[0], cl, induction_trees, r_a, a, n_a, 1)
+            # propagate the assignment
+            ok, l = dp.induct(a, r_a, n_a, cl, 0, induction_trees)
+
+            if not ok:
+                return False, NO_MODEL, []
+
+        elif -1 * val in a:
+            # during the assignment of all the "single" clause we have contradiction ---> UNSAT
+            return False, NO_MODEL, []
+
+    is_model, model, backtrack = dp.in_depth_assignment(induction_trees[0].var[0], cl, induction_trees, r_a, a, n_a, 1)
+
+    if is_model:
+        return is_model, model, backtrack
+
+    else:
+        if backtrack:
 
 
 

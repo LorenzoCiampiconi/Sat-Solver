@@ -1,4 +1,7 @@
+import numpy as np
+import logic_functions as lf
 NO_LEVEL_DECIDED = -1
+EMPTY_CLAUSE = []
 
 
 class backjump_pack:
@@ -14,7 +17,7 @@ class backjump_pack:
 
 # ******************************CDCL FUNCTION****************************** #
 
-def learning_clause(r, r_a):
+def learning_clause(r, r_a, cl):
 
     # get the direct causes of the contradiction
     causes = get_causes(r, r_a)
@@ -28,19 +31,22 @@ def learning_clause(r, r_a):
     # get the lower level to backtrack and build the learnt clause
     levels = []
     learnt_clause = []
+
     for cause in root_causes:
         # save levels
         levels.append(cause.level)
         # learnt clause
-        learnt_clause.append(-1 * cause.var) # appending opposite assignment to a clause, so putting in OR all the root assignment flipped that causes the contradiction
+        learnt_clause.append(-1 * cause.var) # appending opposite assignment to a clause,
+        #  so putting in OR all the root assignment flipped that causes the contradiction
 
     levels.sort()
 
     if len(levels) == 1:
-        # for convenience when only one assignment is the cause of the contradiction then we must assign this variable, so the learnt clause goes from the start
+        # for convenience when only one assignment is the cause of the contradiction
+        # then we must assign this variable, so the learnt clause goes from the start
         level = 0
     else:
-        #level is chosen in the way that an assignment will be forced with the new learnt clause.
+        # level is chosen in the way that an assignment will be forced with the new learnt clause.
         level = levels[len (levels) - 2]
 
     # return an object which contains the level to backjump and the learnt clause
@@ -67,6 +73,53 @@ def get_causes(r, r_a):
 
     return cause
 
+def cut_graph_with_resolution(causes, cl):
+
+    # all the clauses causing the assignment that causes the contradiction of clause 'cl'
+    clauses = [cause.clauses for cause in causes]
+
+    clauses.sort(key = lambda clause: len(clause))
+
+    solvable = False
+
+    learnt = []
+
+    for clause in clauses:
+
+        solvable, results = recursive_resolution(cl, clause, clauses)
+
+        if solvable:
+            if not learnt or len(results) < len(learnt):
+                learnt = results
+
+    return learnt
+
+
+def recursive_resolution(cl_1, cl_2, clauses):
+
+    l_clauses = clauses[:].append(cl_1)
+
+    solvable, result = lf.resolution(cl_1, cl_2)
+
+    if solvable:
+        if result == EMPTY_CLAUSE:
+            return solvable, result
+
+        for clause in clauses:
+            solvable, temp_res = lf.resolution(result, clause)
+
+            temp_res.sort(key = lambda var : abs(var), reverse = False)
+
+            if solvable:
+                if temp_res not in clauses:
+                    l_clauses.append(temp_res)
+
+                # heuristic thinking
+                if len(temp_res) < sum([len(cl) for cl in l_clauses]) / len(l_clauses):
+                    resrecursive_resolution(result, cl_1, l_clauses)
+
+
+# this function cut the graph in a non-optimized way for learning of a clause
 def get_root_cause(r):
     """
     this function get a cause and return the root of this cause, if the cause is a  root assignment return himself, else recursive call is used
