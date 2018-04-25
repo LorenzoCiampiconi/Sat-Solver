@@ -1,15 +1,20 @@
-class assignment_node:
+class AssignmentNode:
     def __init__(self, var, causes, l):
+        """
 
-        #this node assignment
+        :param var: value assigned in this node
+        :param causes: value causing these assignment
+        :param l:
+        """
+        # this node assignment
         self.level = l
         self.var = var
         self.causes = causes
-        self.clause = causes
-        self.clause.append(var)
+        self.clause = [-1 * val for val in causes]
+        self.clause.append(-1 * var)
 
         # this sort is needed to compare same clause that can be saved in different ways
-        self.clause.sort(key = lambda var : abs(var), reverse = False)
+        self.clause.sort(key=lambda val: abs(val), reverse=False)
 
         self.causes_list = []
         self.caused_list = []
@@ -56,18 +61,18 @@ class assignment_node:
         self.causes.caused.remove(self)
 
 
-def define_assignment(val, # value to be assigned
-                      r_a, # tree of assignment for cdcl
-                      a, # assignment list
-                      n_a, # un-assigned variables, ordered in a precise way
-                      causes, # causes of the assignment
-                      l # level of the assignment
+def define_assignment(val,  # value to be assigned
+                      r_a,  # tree of assignment for cdcl
+                      a,  # assignment list
+                      n_a,  # un-assigned variables, ordered in a precise way
+                      causes,  # causes of the assignment
+                      l  # level of the assignment
                       ):
     # add ass_node for CDCL if not fundamental assignment
     if not causes:
-        r_a.append(assignment_node(val, [], l))
+        r_a.append(AssignmentNode(val, [], l))
     else:
-        add_to_caused(assignment_node(val, causes, l), r_a)
+        add_to_caused(AssignmentNode(val, causes, l), r_a)
 
     # add val to ass, opt for having all the assignment done outside the tree for the CDCL
     a.append(val)
@@ -76,14 +81,14 @@ def define_assignment(val, # value to be assigned
     n_a.remove(abs(val))
 
     # grant order of a
-    a.sort(key=lambda a_i: abs(a_i), reverse = False)
+    a.sort(key=lambda a_i: abs(a_i), reverse=False)
 
 
-def invert_assignment(var, # var of which the assignment must be inverted
-                      r_a, # tree of assignment for cdcl
-                        a, # assignment list
-                      n_a, # un-assigned variables, ordered in a precise way
-                      l # level of the assignment
+def invert_assignment(var,  # var of which the assignment must be inverted
+                      r_a,  # tree of assignment for cdcl
+                        a,  # assignment list
+                      n_a,  # un-assigned variables, ordered in a precise way
+                      l  # level of the assignment
                       ):
 
     current_r_a = r_a[-1]
@@ -107,13 +112,12 @@ def invert_assignment(var, # var of which the assignment must be inverted
     define_assignment(-1 * var, r_a, a, n_a, [], l)
 
 
-def add_to_caused(node, # node of assignment to be added
-                  r_a, #root assignments
+def add_to_caused(node,  # node of assignment to be added
+                  r_a,  # root assignments
                   ):
     for root in r_a:
         i = len(node.causes)
         i = root.search_caused(node, i)
         if i == 0:
             break
-
     return

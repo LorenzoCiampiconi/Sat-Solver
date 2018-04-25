@@ -1,10 +1,13 @@
 import numpy as np
 import logic_functions as lf
+
+
+IS_ROOT = True
 NO_LEVEL_DECIDED = -1
 EMPTY_CLAUSE = []
 
 
-class backjump_pack:
+class BacktrackPack:
     def __init__(self, level, clause):
         """
         This class contains the clause learnt after finding a contradiction and the level of the older assignment
@@ -15,30 +18,28 @@ class backjump_pack:
         self.level = level
 
 
-# ******************************CDCL FUNCTION****************************** #
+# ****************************** CDCL FUNCTION ****************************** #
+
 
 def learning_clause(r, r_a, cl):
-
+    """
+    Actual function that learn the clause and define the level to backtrack
+    :param r: assignment causing the contradiction
+    :param r_a: assignments graph
+    :param cl: clause causing the contradiction
+    :return:
+    """
     # get the direct causes of the contradiction
     causes = get_causes(r, r_a)
 
-    # cut the graph and get the root causes
-    root_causes = []
+    # get recursively all the clauses that participate to resolution
+    clauses = get_backward_clauses(causes)
 
-    for cause in causes:
-        root_causes = root_causes + get_root_cause(cause)
+    # cutting the graph doing backward resolution
+    learnt_clause = cut_graph_with_resolution(clauses, cl)
 
-    # get the lower level to backtrack and build the learnt clause
-    levels = []
-    learnt_clause = []
-
-    for cause in root_causes:
-        # save levels
-        levels.append(cause.level)
-        # learnt clause
-        learnt_clause.append(-1 * cause.var) # appending opposite assignment to a clause,
-        #  so putting in OR all the root assignment flipped that causes the contradiction
-
+    # get the list of levels involved in the learnt clauses
+    levels = get_levels(cl, cl[:], r_a, IS_ROOT)[0]
     levels.sort()
 
     if len(levels) == 1:
@@ -50,7 +51,7 @@ def learning_clause(r, r_a, cl):
         level = levels[len (levels) - 2]
 
     # return an object which contains the level to backjump and the learnt clause
-    return backjump_pack(level, learnt_clause)
+    return BacktrackPack(level, learnt_clause)
 
 
 def get_causes(r, r_a):
@@ -73,66 +74,78 @@ def get_causes(r, r_a):
 
     return cause
 
-def cut_graph_with_resolution(causes, cl):
 
-    # all the clauses causing the assignment that causes the contradiction of clause 'cl'
-    clauses = [cause.clauses for cause in causes]
-
-    clauses.sort(key = lambda clause: len(clause))
-
-    solvable = False
-
-    learnt = []
-
-    for clause in clauses:
-
-        solvable, results = recursive_resolution(cl, clause, clauses)
-
-        if solvable:
-            if not learnt or len(results) < len(learnt):
-                learnt = results
-
-    return learnt
-
-
-def recursive_resolution(cl_1, cl_2, clauses):
-
-    l_clauses = clauses[:].append(cl_1)
-
-    solvable, result = lf.resolution(cl_1, cl_2)
-
-    if solvable:
-        if result == EMPTY_CLAUSE:
-            return solvable, result
-
-        for clause in clauses:
-            solvable, temp_res = lf.resolution(result, clause)
-
-            temp_res.sort(key = lambda var : abs(var), reverse = False)
-
-            if solvable:
-                if temp_res not in clauses:
-                    l_clauses.append(temp_res)
-
-                # heuristic thinking
-                if len(temp_res) < sum([len(cl) for cl in l_clauses]) / len(l_clauses):
-                    resrecursive_resolution(result, cl_1, l_clauses)
-
-
-# this function cut the graph in a non-optimized way for learning of a clause
-def get_root_cause(r):
+def cut_graph_with_resolution(clauses, cl):
     """
-    this function get a cause and return the root of this cause, if the cause is a  root assignment return himself, else recursive call is used
-    :param r: cause to be determined the root
+    function that cut the graph using resolution
+    :param clauses:
+    :param cl:
     :return:
     """
-    root = []
+    # start resolve
+    for clause in clauses:
+        cl = lf.resolution(cl, clause)
 
-    if r.causes_list:
-        for causes in r.causes_list:
-            root = root + get_root_cause(causes)
+    return cl
 
-    else:
-        return r
 
-    return root
+def get_backward_clauses(causes):
+    """
+    function to get all causes to resolve with
+    :param causes:
+    :return:
+    """
+    clauses = []
+    rec_clauses = []
+
+    # collect all the clause that caused the wrong assignment, recursively until reaching a root assignment
+    for cause in causes:
+        clauses.append(cause.clause)
+        if cause.causes:
+            rec_clauses = get_backward_clauses(cause.causes_list)
+
+    return clauses + rec_clauses
+
+
+def get_levels(cl, cl_i, r_a, is_root):
+    """
+    get all the levels of the variables in clause learnt
+    :param cl_i:
+    :param is_root:
+    :param cl:
+    :param r_a:
+    :return:
+    """
+    levels = []
+    indexes = []
+    for root in r_a:
+        if any(-1 * val == root.var for val in cl):
+            levels.append(root.l)
+            index = cl_i.indexof(-1 * root.var)
+            # for optimization and correctness remove value of which we already found level of assignment
+            # this is useful when an assignment has multiple root cause, so it will be analyzed more than once
+            cl_i.remove(index)
+            if not is_root:
+                indexes.append(cl.indexof(-1 * root.var))
+            if cl:
+                # optimization in passing cl and getting the return value,
+                # remove literals that has been already considered
+                # in the learnt clause in upper level
+                levels_i, index = get_levels(cl, cl_i, r_a, not IS_ROOT)
+                levels = levels + levels_i
+                indexes = indexes + index
+            else:
+                break
+        elif cl:
+            # passing true as for the root assignment
+            levels_i = get_levels(cl, cl_i, r_a, IS_ROOT)[0]
+            levels = levels + levels_i
+
+        else:
+            break
+
+    if is_root:
+        for index in indexes:
+            cl.remove(index)
+
+    return levels, indexes

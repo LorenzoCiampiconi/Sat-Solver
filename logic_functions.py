@@ -2,12 +2,15 @@ import numpy as np
 
 SOLVABLE = True
 
+
 # assign values to var of the clause, if in result there's positive values then the clause is SAT
+# if
 def assign_to_clause(cl, a):
 
     ab = np.abs(a)
 
     return [abs(cl_j) if cl_j in a else -1 * abs(cl_j)  for cl_j in cl if abs(cl_j) in ab]
+
 
 # function in charge to calculate resolution between two clause
 def resolution(cl_1, cl_2):
@@ -22,10 +25,10 @@ def resolution(cl_1, cl_2):
 
         # exactly one literal has been removed
         if len(solution) == (len(cl_2) - 1):
-            solution.sort(key = lambda var : abs(var), reverse = False)
-            return SOLVABLE, solution
+            solution.sort(key=lambda var : abs(var), reverse=False)
+            return solution
         else:
-            return not SOLVABLE, solution
+            return solution
 
     elif set(boolv_2).issubset(boolv_1):
 
@@ -34,10 +37,10 @@ def resolution(cl_1, cl_2):
 
         # exactly one literal has been removed
         if len(solution) == (len(cl_1) - 1):
-            solution.sort(key = lambda var : abs(var), reverse = False)
-            return SOLVABLE, solution
+            solution.sort(key=lambda var : abs(var), reverse=False)
+            return solution
         else:
-            return not SOLVABLE, []
+            return cl_1
 
     else:
 
@@ -47,8 +50,8 @@ def resolution(cl_1, cl_2):
 
         if len(solution) == len(cl_1) + len(cl_2) - 2 - len([elem for elem in cl_1 if elem in cl_2]):
 
-            solution.sort(key = lambda var : abs(var), reverse = False)
-            return SOLVABLE, solution
+            solution.sort(key=lambda var : abs(var), reverse=False)
+            return solution
 
         else:
-            return not SOLVABLE, []
+            return cl_1

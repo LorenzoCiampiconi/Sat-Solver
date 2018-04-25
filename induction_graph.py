@@ -3,9 +3,10 @@ import logic_functions as lf
 import assignments_graph as ag
 import cdcl
 
-NOT_LEARNT = False
+LEARNT = True
 
-class induction_node:
+
+class InductionNode:
     def __init__(self, i_cl, cl):
         """
 
@@ -17,7 +18,6 @@ class induction_node:
         self.sons = []
         self.common = []
         self.sat_by_other = False
-
 
 
 # *************************INDUCTION GRAPH FUNCTIONS*************************
@@ -33,9 +33,10 @@ def generate_ind_graph(cl):
 
     # generate an induction tree to optimize induction
     for cl_i in cl: # must be careful to grant order
-        add_to_induction_graph(induction_node(cl_i, cl_i), induction_roots, NOT_LEARNT)
+        add_to_induction_graph(InductionNode(cl_i, cl_i), induction_roots, not LEARNT)
 
     return induction_roots
+
 
 def adjust_ind_graph(var, inductions_roots):
     """
@@ -47,7 +48,8 @@ def adjust_ind_graph(var, inductions_roots):
     added = []
 
     adjusted = False
-    # this first loop is to check if an induction root must disappear as it has been satisfied or it has finished the variables
+    # this first loop is to check if an induction root must disappear
+    #  as it has been satisfied or it has finished the variables
     for root in inductions_roots:
 
         removed = False
@@ -58,7 +60,6 @@ def adjust_ind_graph(var, inductions_roots):
                 temp.append(root)
                 added = added + root.sons
                 removed = True
-
 
             root.var = [var_i for var_i in root.var if abs(var_i) != var]
             adjust_ind_graph(var, root.sons)
@@ -88,8 +89,7 @@ def adjust_ind_graph(var, inductions_roots):
 
     for item in added:
 
-        add_to_induction_graph(item, inductions_roots, NOT_LEARNT)
-
+        add_to_induction_graph(item, inductions_roots, not LEARNT)
 
     if adjusted:
         i = 1
@@ -102,7 +102,7 @@ def adjust_ind_graph(var, inductions_roots):
                 if set(np.abs(root.var)).issubset(np.abs(root_2.var)):
                     if root not in temp:
                         temp.append(root)
-                        add_to_induction_graph(root_2, root.sons, NOT_LEARNT)
+                        add_to_induction_graph(root_2, root.sons, not LEARNT)
                         for r in inductions_roots:
                             if root_2 in r.common:
                                 r.common.remove(root_2)
@@ -111,7 +111,7 @@ def adjust_ind_graph(var, inductions_roots):
                 elif set(np.abs(root_2.var)).issubset(np.abs(root.var)):
                     if root_2 not in temp:
                         temp.append(root)
-                        add_to_induction_graph(root, root_2.sons, NOT_LEARNTs)
+                        add_to_induction_graph(root, root_2.sons, not LEARNT)
 
                         for r in inductions_roots:
                             if root in r.common:
@@ -129,7 +129,6 @@ def adjust_ind_graph(var, inductions_roots):
 
     for t in temp:
         inductions_roots.remove(t)
-
 
 
 def induct_through_tree(root, a, r_a, n_a, l):
@@ -157,7 +156,6 @@ def induct_through_tree(root, a, r_a, n_a, l):
                 re_added.append(item)
 
         return True, re_added, ''
-
 
     elif len(root.var) == 1:
 
@@ -237,13 +235,10 @@ def add_to_induction_graph(node, induction_roots, learnt):
 
         elif set(np.abs(node.var)).issubset(np.abs(root.var)):
             temp.append(root)
-            add_to_induction_graph(root, node.sons, NOT_LEARNT)
-
+            add_to_induction_graph(root, node.sons, not LEARNT)
 
         elif any(var_i in node.var for var_i in root.var):
             commons.append(root)
-
-
 
     for r_node in temp:
         induction_roots.remove(r_node)
@@ -258,6 +253,7 @@ def add_to_induction_graph(node, induction_roots, learnt):
         for root in commons:
             node.common.append(root)
             root.common.append(node)
+
 
 def remove_var_common(node, var):
 
