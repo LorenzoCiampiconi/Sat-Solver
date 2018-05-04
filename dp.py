@@ -1,143 +1,86 @@
 import copy
 import numpy as np
 import assignments_graph as ag
-import induction_graph as ig
-from induction_graph import InductionNode
-from cdcl import BacktrackPack
+import watch_list as wl
+from sat_problem_objects import Formula
+from watch_list import Watcher
 import solver
+from cdcl import BacktrackPack
 
 
 # define of boolean that represent a learnt clause
 LEARNT = True
+EMPTY = False
 
 
-def in_depth_assignment(var,  # variable to be assigned, this is the current value deducted from the clause that
-                        # was being analyzed before the call
-                        cls,  # list of clauses
-                        induction_trees,
-                        r_a,  # tree of assignment for CDCL
-                        a,  # list of assignment
-                        n_a,  # not assigned variables
-                        l  # level of next nodes
+def in_depth_assignment(var: int,
+                        formula: Formula,
+                        watch_list: list,
+                        r_a: list,
+                        a: list,
+                        n_a: list,
+                        l: int
                         ):
-    print (a)
-    print(l)
-    # order unchecked variables by appearances in unchecked clause
-    induction_trees.sort(key=lambda node: sum(1 if (n_a_i in np.abs(node.var)) else 0 for n_a_i in n_a), reverse = False)
+    """
+
+    :param formula: Formula input to SAT-Solver
+    :param var: variable to be assigned, this is the current value deducted from the clause that was being analyzed before the call
+    :param watch_list:
+    :param r_a: pick_branching assignment, root for trees that generate the assignment graph
+    :param a: list of assignment
+    :param n_a: not assigned variables
+    :param l:  level of next nodes
+    :return:
+    """
+    print ("Assignments= " + str(a))
+    print("Level = " + str(l))
 
     # *********FIRST BRANCH*********
-
-    l_a = a[:]  # copy of assignments, local assignment of the first branch
-    l_n_a = n_a[:]  # same for not assigned
-
-    induction_graph_l = copy.deepcopy(induction_trees)  # _l stay as LOCAL
-    is_model, model, backtrack = branch(var, l_a, cls, r_a, l_n_a, l, induction_graph_l)
+    is_model, model, backtrack = branch(var, a, formula, r_a, n_a, l, watch_list)
 
     # *********IMPLEMENTING CDCL*********
 
-    while not is_model:
+    # if this is the level to backjump
+    while not is_model and backtrack.level == l:
 
-        if backtrack.level == l:
+        print("Backtrack got in level: " + str(l))
 
-            for clause in solver.learnt_clauses:
-                if clause not in cls:
-                    cls.append(clause)
-                    # define unassigned variables of the learnt clause
-                    var_lc = [val for val in backtrack.clause if abs(val) in n_a]
-                    # define learnt induction node
-                    l_node = ig.InductionNode(var_lc, backtrack.clause)
-                    # learning
-                    ig.add_to_induction_graph(l_node, induction_graph_l, ig.LEARNT)
+        # retracting subsequent assignments
+        ag.retract_lower_level(r_a, a, n_a, l)
 
-            # adding learnt clause
-            solver.learnt_clauses.append(backtrack.clause)
+        if backtrack.clause:
 
-            # clause learnt in last contradiction adding.
-            cls.append(backtrack.clause)
-            # define unassigned variables of the learnt clause
-            var_lc = [val for val in backtrack.clause if abs(val) in n_a]
-            # define learnt induction node
-            l_node = ig.InductionNode(var_lc, backtrack.clause)
-            # learning
-            ig.add_to_induction_graph(l_node, induction_graph_l, ig.LEARNT)
+            backtrack.clause.watched_and_move()
 
-            is_model, model, backtrack = branch(var, l_a, cls, r_a, l_n_a, l, induction_graph_l)
-
-        else:
-            return is_model, model, backtrack
-
-    print(l)
+            is_model, model, backtrack = branch(backtrack.clause.get_first_literal(), a,
+                                                formula, r_a, n_a, l + 1, watch_list)
 
     return is_model, model, backtrack
 
 
-def branch(var, a, cl, r_a, n_a, l, induction_trees):
+def branch(var: int,
+           a: list,
+           formula: Formula,
+           r_a: list,
+           n_a: list,
+           l: int,
+           watch_list: list):
 
     # assign for this branch
-    ag.define_assignment(var, r_a, a, n_a, [], l)  # causes is empty as it's a root assignment
-    ig.adjust_ind_graph(abs(var), induction_trees)
+    print(var)
+    print(n_a)
+    ag.define_assignment(var, r_a, a, n_a, EMPTY, l, not ag.IS_CAUSED)  # causes is empty as it's a root assignment
 
     # induct assignment
-    can_be_model, backtrack = induct(a, r_a, n_a, cl, l, induction_trees)
+    can_be_model, backtrack = wl.watch_a_literal(watch_list, var, a, n_a, r_a, l)
 
     if can_be_model:
-
-        if not induction_trees: # sat as there are no more clause to be satisfied
-            return True, a, []
+        if formula.count_unsat() == 0:  # sat as there are no more clause to be satisfied
+            return True, a, EMPTY
         else:
-            return in_depth_assignment(induction_trees[0].var[0], cl, induction_trees, r_a, a, n_a, l + 1)
+            return in_depth_assignment(watch_list[0].watched[0].var[0], formula, watch_list, r_a, a, n_a, l + 1)
     else:
         # no model found
         model = ''
         return can_be_model, model, backtrack
 
-
-# *****************************INDUCTION TREE***************************** #
-
-
-def induct(a,
-           r_a,
-           n_a,
-           cl,
-           l,
-           induction_roots):
-    """
-    Unit propagation function that propagate an assignment finding inductions
-
-    :param induction_roots:
-    :param a: assignments
-    :param r_a: tree of the assignments
-    :param n_a: not assigned variables
-    :param cl: clause
-    :param l: level
-    :return:
-    """
-    # temp field for root induction node that must be removed
-    temp = []
-
-    # responses in case a root must be removed, some of the sons of this root
-    # that must not be removed will be added again
-    responses = []
-
-    for root in induction_roots:
-        ok, re_add, backtrack = ig.induct_through_tree(root, a, r_a, n_a, l)
-
-        if not ok:
-            return False, backtrack
-
-        elif re_add != root:
-            temp.append(root)
-
-            for common in root.common:
-                common.common.remove(root)
-
-            for item in re_add:
-                responses.append(item)
-
-    if temp:
-        for item in temp:
-            induction_roots.remove(item)
-        for item in responses:
-            ig.add_to_induction_graph(item, induction_roots, not LEARNT)
-
-    return True, []

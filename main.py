@@ -1,6 +1,6 @@
 import file_handler
 import solver
-from Formula import Formula
+from sat_problem_objects import Formula
 def main():
 
     formula = file_handler.read_files()

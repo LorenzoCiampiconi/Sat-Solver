@@ -1,5 +1,8 @@
+IS_CAUSED = True
+
+
 class AssignmentNode:
-    def __init__(self, var, causes, l):
+    def __init__(self, var, causes, l, is_caused):
         """
 
         :param var: value assigned in this node
@@ -10,11 +13,10 @@ class AssignmentNode:
         self.level = l
         self.var = var
         self.causes = causes
-        self.clause = [-1 * val for val in causes]
-        self.clause.append(-1 * var)
+        self.clause = []
 
-        # this sort is needed to compare same clause that can be saved in different ways
-        self.clause.sort(key=lambda val: abs(val), reverse=False)
+        if is_caused:
+            self.clause = is_caused
 
         self.causes_list = []
         self.caused_list = []
@@ -33,12 +35,16 @@ class AssignmentNode:
         :param i: number of cause that miss to be found
         :return:
         """
+
         if self.var in node.causes:
+            print("add" + str(self.var))
             node.causes_list.append(self)
             self.add_caused(node)
             i -= 1
 
         for caused in self.caused_list:
+            if i == 0:
+                break
             i = caused.search_caused(node, i)
 
         return i
@@ -51,7 +57,7 @@ class AssignmentNode:
         if caused in self.caused_list:
             self.caused_list.remove(caused)
 
-        else: # check if the "caused" has been caused by one of the assignment
+        else: # check if the "caused" has been caused by one of the caused assignment
             for son_caused in self.caused_list:
                 son_caused.remove_caused(caused)
 
@@ -66,58 +72,68 @@ def define_assignment(val,  # value to be assigned
                       a,  # assignment list
                       n_a,  # un-assigned variables, ordered in a precise way
                       causes,  # causes of the assignment
-                      l  # level of the assignment
+                      level,  # level of the assignment
+                      is_caused  # assignment is caused or is heuristic assignment
                       ):
+
     # add ass_node for CDCL if not fundamental assignment
     if not causes:
-        r_a.append(AssignmentNode(val, [], l))
+        r_a.append(AssignmentNode(val, [], level, is_caused))
     else:
-        add_to_caused(AssignmentNode(val, causes, l), r_a)
+        add_to_caused(AssignmentNode(val, causes, level, is_caused), r_a)
 
     # add val to ass, opt for having all the assignment done outside the tree for the CDCL
     a.append(val)
 
+    print(val)
+
     # remove from the assignable variable, need this list because it has a specific order
     n_a.remove(abs(val))
-
-    # grant order of a
-    a.sort(key=lambda a_i: abs(a_i), reverse=False)
-
-
-def invert_assignment(var,  # var of which the assignment must be inverted
-                      r_a,  # tree of assignment for cdcl
-                        a,  # assignment list
-                      n_a,  # un-assigned variables, ordered in a precise way
-                      l  # level of the assignment
-                      ):
-
-    current_r_a = r_a[-1]
-
-    i = 0
-    for root in r_a:
-
-        if root.level == l:
-            current_r_a = r_a[l - 1]
-            break
-
-        i += 1
-
-    # remove the caused from the tree of assignment
-    for caused in current_r_a.caused_list:
-        for r_a_i in r_a:
-            r_a_i.remove_caused(caused)
-
-    del r_a[-(len(r_a) - i):]
-
-    define_assignment(-1 * var, r_a, a, n_a, [], l)
 
 
 def add_to_caused(node,  # node of assignment to be added
                   r_a,  # root assignments
                   ):
+    print("add to ass: " + str(node.var))
+    i = len(node.causes)
     for root in r_a:
-        i = len(node.causes)
         i = root.search_caused(node, i)
         if i == 0:
             break
     return
+
+
+def retract_lower_level(r_a, a, n_a, level):
+
+    temp = []
+
+    for root in r_a:
+        if root.level > level:
+            temp.append(root)
+            a.remove(root.var)
+            n_a.append(abs(root.var))
+            n_a.sort()
+            for caused in root.caused_list:
+                retract_caused_assignment(caused, r_a, a, n_a)
+
+    for item in temp:
+        r_a.remove(item)
+
+
+def retract_caused_assignment(assignment_node, r_a, a, n_a):
+
+    print("remove: " + (str(assignment_node.var)))
+
+    a.remove(assignment_node.var)
+    n_a.append(abs(assignment_node.var))
+    n_a.sort()
+
+    caused_list = assignment_node.caused_list[:]
+
+    for caused in caused_list:
+        retract_caused_assignment(caused, r_a, a, n_a)
+
+    for cause in assignment_node.causes_list:
+        cause.caused_list.remove(assignment_node)
+
+# ******************* DEBUGGING FUNCTION *********************

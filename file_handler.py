@@ -1,11 +1,12 @@
-from Formula import Formula
+import solver
+from sat_problem_objects import Formula
+from sat_problem_objects import Clause
 
 
 # Define path and useful variables such as the separator used in the file to be queried
-read_path = r"\input"
-query_list_file_name = r"\input-1"
+read_path = "input-test-files"
+query_list_file_name = "/input-6"
 extension = ".cnf"
-output_file_name = "outputB.txt"
 sep = "\t"
 
 
@@ -13,7 +14,7 @@ sep = "\t"
 def read_files():
 
     # open the file
-    with open(read_path + query_list_file_name + extension, "r") as input_file:
+    with open(read_path + query_list_file_name, "r") as input_file:
         formula = Formula()
 
         for line in input_file:
@@ -23,10 +24,12 @@ def read_files():
                 words = line.split(" ")
                 formula.v = int(words[2])
                 formula.nc = int(words[3])
+
             else :
                 clause = line.partition(" 0")[0]
                 clause = clause.split()
-                formula.c.append(list(map(int, clause)))
+                clause = Clause(list(map(int, clause)))
+                formula.clauses.append(clause)
 
     return formula
 
