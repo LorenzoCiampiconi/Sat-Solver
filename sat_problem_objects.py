@@ -1,12 +1,5 @@
 import random
 import numpy as np
-import watch_list as wl
-
-
-class SatProblem:
-    def __init__(self):
-        # todo
-        c = []
 
 
 class Formula:
@@ -23,7 +16,20 @@ class Formula:
 
     def add_learnt_clause(self, learnt_clause, a, watch_list):
         self.clauses.append(learnt_clause)
-        wl.add_clause_to_watch_list(learnt_clause, watch_list, not wl.GENERATION, a)
+
+
+
+class SatProblem:
+    def __init__(self, formula: Formula, random):
+        self.a = []
+        # noinspection PyTypeChecker
+        self.n_a = list(range(1, formula.v + 1))
+        self.r_a = []
+        self.formula = formula
+        self.watch_list = []
+        self.calls = 0
+        self.assignments = 0
+        self.random = random
 
 
 class Clause:
@@ -43,18 +49,25 @@ class Clause:
         Move all of those literal to the rear
         :param a: actual assignments
         """
-
         abs_a = np.abs(a)
 
         count = 0
         i = 0
+
+        temp = []
+
         for lit in self.c[:]:
-            # count literal that has been assigned of this not yet assigned clause, move those literals to the rear
-            if abs(lit) in abs_a :
-                self.c = self.c[:i] + self.c[i + 1:] + [self.c[i]]
+            # count literal that has been assigned of this not yet satisfied clause, move those literals to the rear
+            if abs(lit) in abs_a:
+                temp.append(lit)
                 count += 1
 
             i += 1
+
+        # re add to the rear
+        for item in temp:
+            self.c.remove(item)
+            self.c.append(item)
 
         self.n_ass = len(self.c) - count
         return self.n_ass
@@ -63,7 +76,7 @@ class Clause:
         return self.c[0]
 
     def get_second_literal(self):
-        return self.c[0]
+        return self.c[1]
 
     def is_sat(self):
         self.sat = True

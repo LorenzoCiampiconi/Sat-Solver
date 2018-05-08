@@ -2,7 +2,9 @@ import copy
 import numpy as np
 import assignments_graph as ag
 import watch_list as wl
+import heuristic
 from sat_problem_objects import Formula
+from sat_problem_objects import SatProblem
 from watch_list import Watcher
 import solver
 from cdcl import BacktrackPack
@@ -14,71 +16,86 @@ EMPTY = False
 
 
 def in_depth_assignment(var: int,
-                        formula: Formula,
-                        watch_list: list,
-                        r_a: list,
-                        a: list,
-                        n_a: list,
+                        sp: SatProblem,
                         l: int
                         ):
     """
 
-    :param formula: Formula input to SAT-Solver
+    :param sp: the sat problem, containing assignment, watch list and graph of assignments
     :param var: variable to be assigned, this is the current value deducted from the clause that was being analyzed before the call
-    :param watch_list:
-    :param r_a: pick_branching assignment, root for trees that generate the assignment graph
-    :param a: list of assignment
-    :param n_a: not assigned variables
     :param l:  level of next nodes
     :return:
     """
-    print ("Assignments= " + str(a))
-    print("Level = " + str(l))
 
-    # *********FIRST BRANCH*********
-    is_model, model, backtrack = branch(var, a, formula, r_a, n_a, l, watch_list)
+    print("Level: " + str(l))
+    print("Next assignments: " + str(var))
+
+    if var == 88:
+        stop = True
+
+    # *********NEW BRANCH*********
+    is_model, model, backtrack = branch(var, sp, l)
+
+    sp.calls += 1
 
     # *********IMPLEMENTING CDCL*********
 
     # if this is the level to backjump
     while not is_model and backtrack.level == l:
 
-        print("Backtrack got in level: " + str(l))
-
         # retracting subsequent assignments
-        ag.retract_lower_level(r_a, a, n_a, l)
+        ag.retract_lower_level(sp, l)
+
+        '''
+        for clause in sp.formula.clauses:
+            print(clause.c)
+        '''
 
         if backtrack.clause:
 
-            backtrack.clause.watched_and_move()
+            wl.add_clause_to_watch_list(backtrack.clause, sp.watch_list, not wl.GENERATION, sp.a)
 
-            is_model, model, backtrack = branch(backtrack.clause.get_first_literal(), a,
-                                                formula, r_a, n_a, l + 1, watch_list)
+            backtrack.clause.watched_and_move(sp.a)
 
+            for lit in backtrack.clause.c:
+                not_contradict, backtrack = wl.watch_a_literal(-1 * lit, sp, l)
+
+                if not not_contradict:
+                    return not_contradict, '', backtrack
+
+            if sp.formula.count_unsat() == 0 or not sp.n_a:  # sat as there are no more clause to be satisfied
+                return True, sp.a, EMPTY
+
+            next_assignment = heuristic.pick_branching(sp)
+
+            is_model, model, backtrack = in_depth_assignment(next_assignment, sp, l + 1)
+
+    # print("level " + str(l) + "" + "return: " + str(is_model))
     return is_model, model, backtrack
 
 
 def branch(var: int,
-           a: list,
-           formula: Formula,
-           r_a: list,
-           n_a: list,
+           sp: SatProblem,
            l: int,
-           watch_list: list):
+           ):
+
 
     # assign for this branch
-    print(var)
-    print(n_a)
-    ag.define_assignment(var, r_a, a, n_a, EMPTY, l, not ag.IS_CAUSED)  # causes is empty as it's a root assignment
+    # print("starting branch: " + str(var))
+    # print("not assigned: " + str(sp.n_a))
+    ag.define_assignment(var, sp, EMPTY, l, not ag.IS_CAUSED)  # causes is empty as it's a root assignment
 
     # induct assignment
-    can_be_model, backtrack = wl.watch_a_literal(watch_list, var, a, n_a, r_a, l)
+    can_be_model, backtrack = wl.watch_a_literal(var, sp, l)
 
     if can_be_model:
-        if formula.count_unsat() == 0:  # sat as there are no more clause to be satisfied
-            return True, a, EMPTY
+        if sp.formula.count_unsat() == 0 or not sp.n_a:  # sat as there are no more clause to be satisfied
+            return True, sp.a, EMPTY
         else:
-            return in_depth_assignment(watch_list[0].watched[0].var[0], formula, watch_list, r_a, a, n_a, l + 1)
+
+            next_assignment = heuristic.pick_branching(sp)
+            # print("next heuristic assigment = " + str(next_assignment))
+            return in_depth_assignment(next_assignment, sp, l + 1)
     else:
         # no model found
         model = ''

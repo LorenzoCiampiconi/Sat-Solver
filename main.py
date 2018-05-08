@@ -3,8 +3,9 @@ import solver
 from sat_problem_objects import Formula
 def main():
 
-    formula = file_handler.read_files()
-    solver.solve(formula)
+    formula = Formula()
+    formula = file_handler.read_files(formula)
+    solver.solve(formula, False)
 
 
 

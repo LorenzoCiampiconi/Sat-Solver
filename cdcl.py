@@ -1,7 +1,8 @@
 import numpy as np
 import logic_functions as lf
-from sat_problem_objects import Clause, Formula
-
+from sat_problem_objects import Clause, Formula, SatProblem
+import watch_list as wl
+import assignments_graph as ag
 
 
 IS_ROOT = True
@@ -24,39 +25,39 @@ class BacktrackPack:
 
 
 def learning_clause(r: list,
-                    r_a: list,
                     clause: Clause,
-                    formula: Formula,
-                    a: list,
-                    watch_list: list
+                    sp: SatProblem,
+                    level
                     ):
     """
     Actual function that learn the clause and define the level to backtrack
-    :param a:
-    :param watch_list:
-    :param clause:
-    :param formula: Formula input to SAT
+    :param sp: the sat problem, containing assignment, watch list and graph of assignments
+    :param clause: clause causing the contradiction
     :param r: assignment causing the contradiction
-    :param r_a: assignments graph
-    :param cl: clause causing the contradiction
     :return:
     """
 
-    # get the direct causes of the contradiction
-    causes = get_causes(r, r_a)
+    # print("Contradiction found caused by: " + str(clause.c))
 
-    # get recursively all the clauses that participate to resolution
-    clauses = get_backward_clauses(causes)
+    # print("current assignment:" + str(sp.a))
 
-    # cutting the graph doing backward resolution
-    learnt_clause = cut_graph_with_resolution(clauses, clause)
+    # cutting the graph doing backward resolution, idea similar a to the one in minisat
+    learnt_clause, levels = analyze_conflict(sp.r_a, clause, level)
 
-    # get the list of levels involved in the learnt clauses
-    levels = get_levels(learnt_clause, learnt_clause[:], r_a, IS_ROOT)[0]
-    levels = list(set(levels))
-    levels.sort()
+    #if not learnt_clause:
+        # print("UNSAT FOUND")
 
-    if len(levels) <= 1:
+    learnt_clause = [[lit] for lit in learnt_clause]
+    levels = [[l] for l in levels]
+
+    zipped = [a + b for a, b in zip(learnt_clause, levels)]
+
+    zipped.sort(key=lambda elem: elem[1], reverse=False)
+
+    learnt_clause = [a[0] for a in zipped]
+    levels = [a[1] for a in zipped]
+
+    if len(learnt_clause) <= 1:
         # for convenience when only one assignment is the cause of the contradiction
         # then we must assign this variable, so the learnt clause goes from the start
         level = 0
@@ -65,106 +66,95 @@ def learning_clause(r: list,
         level = levels[len (levels) - 2]
 
     learnt_clause = Clause(learnt_clause)
-    formula.add_learnt_clause(learnt_clause, a, watch_list)
+    sp.formula.add_learnt_clause(learnt_clause, sp.a, sp.watch_list)
+
+    print("Clause Learnt:" + str(learnt_clause.c))
+
+    print("go back to level:" + str(level))
 
     # return an object which contains the level to backjump and the learnt clause
     return BacktrackPack(level, learnt_clause)
 
 
-def get_causes(r, r_a):
-    """
-    this function is in charge to recover the cause of a CONTRADICTED CLAUSE, so a clause which assigned give to empty clause (FALSE)
-    :param r: assignments to clause, those are all negative values with variable of the clause
-    :param r_a: assignments graph
-    """
+def analyze_conflict(r_a, clause, level):
+    # print("conflict caused by" + str(clause.c))
 
-    cause = []
+    seen = []
+    c = clause.c
 
-    # search among the assignments graph
-    for root in r_a:
-        if any(var == abs(root.var) for var in np.abs(r)):
-            # this assignment has caused the contradiction
-            cause.append(root)
-            cause = cause + get_causes(r, root.caused_list)
-        else:
-            # check if one of the caused assignment has caused the contradiction
-            cause = cause + get_causes(r, root.caused_list)
-
-    return cause
-
-
-def cut_graph_with_resolution(clauses: list, analyzed_clause: Clause):
-    """
-    function that cut the graph using resolution
-    :param clauses:
-    :param analyzed_clause:
-    :return:
-    """
-    # start resolve
-    for clause in clauses:
-        analyzed_clause = lf.resolution(analyzed_clause.c, clause.c)
-
-    return analyzed_clause
-
-
-def get_backward_clauses(causes):
-    """
-    function to get all causes to resolve with
-    :param causes:
-    :return:
-    """
-    clauses = []
-    rec_clauses = []
-
-    # collect all the clause that caused the wrong assignment, recursively until reaching a root assignment
-    for cause in causes:
-        if cause.clause:
-            clauses.append(cause.clause)
-        if cause.causes:
-            rec_clauses = get_backward_clauses(cause.causes_list)
-
-    return clauses + rec_clauses
-
-
-def get_levels(cl, cl_i, r_a, is_root):
-    """
-    get all the levels of the variables in clause learnt
-    :param cl_i:
-    :param is_root:
-    :param cl:
-    :param r_a:
-    :return:
-    """
     levels = []
-    indexes = []
-    for root in r_a:
-        if any(-1 * val == root.var for val in cl_i):
-            levels.append(root.level)
-            index = cl_i.index(-1 * root.var)
-            # for optimization and correctness remove value of which we already found level of assignment
-            # this is useful when an assignment has multiple root cause, so it will be analyzed more than once
-            del cl_i[index]
-            if not is_root:
-                indexes.append(cl.index(-1 * root.var))
-            if cl_i:
-                # optimization in passing cl and getting the return value,
-                # remove literals that has been already considered
-                # in the learnt clause in upper level
-                levels_i, index = get_levels(cl, cl_i, root.caused_list, not IS_ROOT)
-                levels = levels + levels_i
-                indexes = indexes + index
-            else:
-                break
-        elif cl_i:
-            # passing true as for the root assignment
-            levels_i = get_levels(cl, cl_i, root.caused_list, IS_ROOT)[0]
-            levels = levels + levels_i
 
-        else:
-            break
+    learnt = []
 
-    if is_root:
-        for index in indexes:
-            del cl[index]
+    for literal in c:
 
-    return levels, indexes
+        if literal not in seen:
+            seen.append(literal)
+            found, node = ag.get_node_of_assignment(r_a, -1 * literal)
+
+            # if not found:
+                # print("ERROR with" + str(-1 * literal))
+                # ag.print_graph(r_a)
+
+            if node.level >= level:
+                resolution_on_analysis(r_a, -1 * literal, seen, level, levels, learnt)
+
+            elif node.level > 0:
+                # print("add to learnt " + str(literal))
+                learnt.append(literal)
+                levels.append(node.level)
+
+    return learnt, levels
+
+
+def resolution_on_analysis(r_a, literal, seen, level, levels, learnt):
+
+    # print("solve on" + str(literal))
+
+    found, node = ag.get_node_of_assignment(r_a, literal)
+
+    '''
+    if not found:
+        print("ERROR caused by " + str(literal))
+
+    if node.clause:
+        print("with clause " + str(node.clause.c))
+
+    else:
+        print("with no clause ")
+
+    if not found:
+        print("ERROR")
+    
+    '''
+
+    if node.clause:
+        # resolve on last assigned, by the structure the first on the clause, will be the last assigned
+        # in this case are the causes, so clauses it's the
+        clause = node.clause.c[1:]
+
+        for c in clause:
+            if c not in seen:
+                seen.append(c)
+
+                if node.level >= level:
+                    # print("solve on " + str(c))
+
+                    resolution_on_analysis(r_a, -1 * c, seen, level, levels, learnt)
+
+                elif node.level > 0:
+                    # print("add to learnt " + str(c))
+                    learnt.append(c)
+                    levels.append(node.level)
+
+    elif -1 * literal not in learnt and 0 < node.level:
+            seen.append(-1 * literal)
+            learnt.append(-1 * literal)
+            levels.append(node.level)
+            # print("add to learnt " + str(-1 * literal))
+
+    return learnt
+
+
+
+
