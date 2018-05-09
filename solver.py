@@ -56,7 +56,7 @@ def top_level_assignments(sp: SatProblem) -> tuple:
 
         # which variables is forced and with what value?
         val = clauses[0].get_first_literal()
-        ag.define_assignment(val, sp, [], 0, clauses[0])
+        ag.define_assignment(val, sp, [], TOP_LEVEL, clauses[0])
 
         # propagate the assignment
         ok, backtrack = wl.watch_a_literal(val, sp, TOP_LEVEL)
@@ -82,14 +82,6 @@ def top_level_assignments(sp: SatProblem) -> tuple:
 
         while not is_model and backtrack.level == 0 and backtrack.clause.c != EMPTY_CLAUSE:
 
-            # print("backtrack caught in top level")
-
-            # print("Formula is now:\n ")
-
-            '''
-            for clause in sp.formula.clauses:
-                print(clause.c)
-            '''
 
             ag.retract_lower_level(sp, level=TOP_LEVEL)
 
@@ -124,16 +116,11 @@ def check_solution(model, cls):
         r = lf.assign_to_clause(cl, model)
 
         if not any(val > 0 for val in r):
-            # print("Wrong model: contradiction found in clause: " + str(cl.c) + ", " + str(r))
             checked = False
-            # print(i)
-
         i += 1
 
     if checked:
-        # print("Correct model")
         return True
-
     else:
         return False
 

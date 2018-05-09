@@ -37,15 +37,9 @@ def learning_clause(r: list,
     :return:
     """
 
-    # print("Contradiction found caused by: " + str(clause.c))
-
-    # print("current assignment:" + str(sp.a))
 
     # cutting the graph doing backward resolution, idea similar a to the one in minisat
-    learnt_clause, levels = analyze_conflict(sp.r_a, clause, level)
-
-    #if not learnt_clause:
-        # print("UNSAT FOUND")
+    learnt_clause, levels, set = analyze_conflict(sp.r_a, clause, level)
 
     learnt_clause = [[lit] for lit in learnt_clause]
     levels = [[l] for l in levels]
@@ -68,17 +62,13 @@ def learning_clause(r: list,
     learnt_clause = Clause(learnt_clause)
     sp.formula.add_learnt_clause(learnt_clause, sp.a, sp.watch_list)
 
-    print("Clause Learnt:" + str(learnt_clause.c))
-
-    print("go back to level:" + str(level))
+    print(learnt_clause.c)
 
     # return an object which contains the level to backjump and the learnt clause
     return BacktrackPack(level, learnt_clause)
 
 
 def analyze_conflict(r_a, clause, level):
-    # print("conflict caused by" + str(clause.c))
-
     seen = []
     c = clause.c
 
@@ -86,72 +76,59 @@ def analyze_conflict(r_a, clause, level):
 
     learnt = []
 
+    set = [clause]
+
     for literal in c:
 
         if literal not in seen:
             seen.append(literal)
             found, node = ag.get_node_of_assignment(r_a, -1 * literal)
 
-            # if not found:
-                # print("ERROR with" + str(-1 * literal))
-                # ag.print_graph(r_a)
+            if node.clause:
+                set.append(node.clause)
 
-            if node.level >= level:
-                resolution_on_analysis(r_a, -1 * literal, seen, level, levels, learnt)
+            if node.level >= level and node.clause:
+                resolution_on_analysis(r_a, node, seen, level, levels, learnt, set)
 
             elif node.level > 0:
-                # print("add to learnt " + str(literal))
+                print("add to learnt " + str(literal))
                 learnt.append(literal)
                 levels.append(node.level)
 
-    return learnt, levels
+    return learnt, levels, set
 
 
-def resolution_on_analysis(r_a, literal, seen, level, levels, learnt):
+def resolution_on_analysis(r_a, node, seen, level, levels, learnt, set):
 
-    # print("solve on" + str(literal))
+    clause = node.clause.c[1:]
 
-    found, node = ag.get_node_of_assignment(r_a, literal)
+    for c in clause:
+        if c not in seen:
+            seen.append(c)
+            found, next_node = ag.get_node_of_assignment(r_a, -1 * c)
 
-    '''
-    if not found:
-        print("ERROR caused by " + str(literal))
+            if next_node.clause:
+                print("with clause " + str(next_node.clause.c))
 
-    if node.clause:
-        print("with clause " + str(node.clause.c))
+                set.append(node.clause)
 
-    else:
-        print("with no clause ")
+                if next_node.level >= level:
+                    print("solve on " + str(c))
 
-    if not found:
-        print("ERROR")
-    
-    '''
+                    resolution_on_analysis(r_a, next_node, seen, level, levels, learnt, set)
 
-    if node.clause:
-        # resolve on last assigned, by the structure the first on the clause, will be the last assigned
-        # in this case are the causes, so clauses it's the
-        clause = node.clause.c[1:]
-
-        for c in clause:
-            if c not in seen:
-                seen.append(c)
-
-                if node.level >= level:
-                    # print("solve on " + str(c))
-
-                    resolution_on_analysis(r_a, -1 * c, seen, level, levels, learnt)
-
-                elif node.level > 0:
-                    # print("add to learnt " + str(c))
+                elif next_node.level > 0:
+                    print("add to learnt " + str(c))
                     learnt.append(c)
-                    levels.append(node.level)
+                    levels.append(next_node.level)
 
-    elif -1 * literal not in learnt and 0 < node.level:
-            seen.append(-1 * literal)
-            learnt.append(-1 * literal)
-            levels.append(node.level)
-            # print("add to learnt " + str(-1 * literal))
+            else:
+                if -1 * next_node.var not in learnt and node.level > 0:
+                    seen.append(-1 * next_node.var)
+                    learnt.append(-1 * next_node.var)
+                    levels.append(next_node.level)
+                    print("add to learnt " + str(-1 * node.var))
+                print("with no clause because heuristic assignment")
 
     return learnt
 

@@ -27,12 +27,6 @@ def in_depth_assignment(var: int,
     :return:
     """
 
-    print("Level: " + str(l))
-    print("Next assignments: " + str(var))
-
-    if var == 88:
-        stop = True
-
     # *********NEW BRANCH*********
     is_model, model, backtrack = branch(var, sp, l)
 
@@ -46,10 +40,6 @@ def in_depth_assignment(var: int,
         # retracting subsequent assignments
         ag.retract_lower_level(sp, l)
 
-        '''
-        for clause in sp.formula.clauses:
-            print(clause.c)
-        '''
 
         if backtrack.clause:
 
@@ -94,7 +84,6 @@ def branch(var: int,
         else:
 
             next_assignment = heuristic.pick_branching(sp)
-            # print("next heuristic assigment = " + str(next_assignment))
             return in_depth_assignment(next_assignment, sp, l + 1)
     else:
         # no model found

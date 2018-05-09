@@ -149,7 +149,7 @@ def watch_a_literal(lit, sp, level):
 
                 causes = [-1 * lit for lit in clause.c[1:]]
 
-                # print("DEFININING CAUSED ASSIGNMENT BY :" + str(clause.c) + " " + str(clause.get_first_literal()))
+                print("DEFININING CAUSED ASSIGNMENT BY :" + str(clause.c) + " " + str(clause.get_first_literal()))
                 # print("current ass: " + str(sp.a))
                 ag.define_assignment(clause.get_first_literal(), sp, causes, level, clause)
 
@@ -160,7 +160,7 @@ def watch_a_literal(lit, sp, level):
                     for item in temp:
                         watcher.watched.remove(item)
 
-                    # print("going back to level " + str(backtrack.level))
+                    print("going back to level " + str(backtrack.level))
                     return not_contradict, backtrack
 
             else:
@@ -168,7 +168,7 @@ def watch_a_literal(lit, sp, level):
                 for item in temp:
                     watcher.watched.remove(item)
 
-                # print("contradiction found watching " + str(lit) + "on clause" + str(clause.c))
+                print("contradiction found watching " + str(lit) + "on clause" + str(clause.c))
                 r = lf.assign_to_clause(clause, sp.a)
                 return CONTRADICT, cdcl.learning_clause(r, clause, sp, level)
 

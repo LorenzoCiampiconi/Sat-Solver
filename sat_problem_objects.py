@@ -18,7 +18,6 @@ class Formula:
         self.clauses.append(learnt_clause)
 
 
-
 class SatProblem:
     def __init__(self, formula: Formula, random):
         self.a = []
