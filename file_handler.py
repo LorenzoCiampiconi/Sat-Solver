@@ -1,6 +1,6 @@
 # Define path and useful variables such as the separator used in the file to be queried
 read_path = "input-test-files"
-query_list_file_name = "/input-9"
+query_list_file_name = "/input-8"
 extension = ".cnf"
 sep = "\t"
 
@@ -23,6 +23,7 @@ def read_files(formula, input):
             for line in input_file:
                 if line.startswith("c"):
                     string = line.partition("c")[2]
+
                 elif line.startswith("p cnf"):
                     words = line.split()
                     formula.v = int(words[2])

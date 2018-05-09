@@ -4,6 +4,7 @@ import sys
 import time
 from sat_problem_objects import Formula
 
+
 def main():
 
     print("Welcome to this finally working SAT:")
@@ -27,11 +28,10 @@ def main():
         solver.solve(formula, False)
         t = time.time() - t
 
-        print("total time: " + str(t) + " seconds")
+        print("Total time: " + str(t) + " seconds")
 
     else:
         print("Invalid Input")
-
 
 
 main()

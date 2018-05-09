@@ -38,7 +38,7 @@ def learning_clause(r: list,
     """
 
     # cutting the graph doing backward resolution, idea similar a to the one in minisat
-    learnt_clause, levels, set = analyze_conflict(sp.r_a, clause, level)
+    learnt_clause, levels = analyze_conflict(sp.r_a, clause, level)
 
     learnt_clause = [[lit] for lit in learnt_clause]
     levels = [[l] for l in levels]
@@ -85,17 +85,27 @@ def analyze_conflict(r_a, clause, level):
                 set.append(node.clause)
 
             if node.level >= level and node.clause:
-                resolution_on_analysis(r_a, node, seen, level, levels, learnt, set)
+                resolution_on_analysis(r_a, node, seen, level, levels, learnt)
 
             elif node.level > 0:
                 learnt.append(literal)
                 levels.append(node.level)
 
-    return learnt, levels, set
+    return learnt, levels
 
 
-def resolution_on_analysis(r_a, node, seen, level, levels, learnt, set):
-
+def resolution_on_analysis(r_a, node, seen, level, levels, learnt):
+    """
+    For each literal of a clause to resolve with (the one contained in node), find the assignment node and
+    :param r_a:
+    :param node:
+    :param seen:
+    :param level:
+    :param levels:
+    :param learnt:
+    :param set:
+    :return:
+    """
     clause = node.clause.c[1:]
 
     for c in clause:
@@ -105,10 +115,8 @@ def resolution_on_analysis(r_a, node, seen, level, levels, learnt, set):
 
             if next_node.clause:
 
-                set.append(node.clause)
-
                 if next_node.level >= level:
-                    resolution_on_analysis(r_a, next_node, seen, level, levels, learnt, set)
+                    resolution_on_analysis(r_a, next_node, seen, level, levels, learnt)
 
                 elif next_node.level > 0:
                     learnt.append(c)
