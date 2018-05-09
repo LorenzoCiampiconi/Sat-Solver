@@ -6,7 +6,9 @@ from sat_problem_objects import Formula
 
 
 def main():
-
+    """
+    Main function to launch the solver
+    """
     print("Welcome to this finally working SAT:")
 
     formula = Formula()

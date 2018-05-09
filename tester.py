@@ -5,7 +5,7 @@ import numpy as np
 
 def test():
     formula = Formula()
-    formula = file_handler.read_files(formula)
+    formula, valid_input = file_handler.read_files(formula, input=False)
 
     random_calls = []
     random_assignments = []

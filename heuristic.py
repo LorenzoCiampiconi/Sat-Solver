@@ -6,6 +6,10 @@ sign = [1, -1]
 
 class HeuristicObj:
     def __init__(self, var):
+        """
+        Object that contains the weight for a specific literal
+        :param var:
+        """
         self.lit = var
         self.weight = 0
 
@@ -27,7 +31,14 @@ def pick_random(n_a):
 
 
 def original_pick_branching(sat_problem):
-
+    """
+    The pick branching is based on the appearance of not-assigned literal clauses
+    The appearance is weighted on the "importance" of the clause,
+    if a clause has less not assigned variable is more important
+    so more weight will be assigned to the literal
+    :param sat_problem: current sat_problem
+    :return:
+    """
     n_a = sat_problem.n_a
 
     weighters = []
@@ -44,14 +55,6 @@ def original_pick_branching(sat_problem):
     weighters.sort(key=lambda elem: elem.weight, reverse=True)
 
     return weighters[0].lit
-
-
-
-
-
-
-
-
 
 
 def choose_assignment_from_backtracking(clause, n_a):

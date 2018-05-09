@@ -19,7 +19,7 @@ class Formula:
 
 
 class SatProblem:
-    def __init__(self, formula: Formula, random):
+    def __init__(self, formula: Formula, ran):
         self.a = []
         # noinspection PyTypeChecker
         self.n_a = list(range(1, formula.v + 1))
@@ -28,7 +28,7 @@ class SatProblem:
         self.watch_list = []
         self.calls = 0
         self.assignments = 0
-        self.random = random
+        self.random = ran
 
 
 class Clause:

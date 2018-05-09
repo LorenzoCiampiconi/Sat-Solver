@@ -97,13 +97,12 @@ def analyze_conflict(r_a, clause, level):
 def resolution_on_analysis(r_a, node, seen, level, levels, learnt):
     """
     For each literal of a clause to resolve with (the one contained in node), find the assignment node and
-    :param r_a:
-    :param node:
-    :param seen:
-    :param level:
-    :param levels:
-    :param learnt:
-    :param set:
+    :param r_a: assignment graph
+    :param node: node to solve with
+    :param seen: already seen literal
+    :param level: level of the current node
+    :param levels: levels of literals added
+    :param learnt: clause learnt at the moment
     :return:
     """
     clause = node.clause.c[1:]
