@@ -120,13 +120,9 @@ def watch_a_literal(lit, sp, level):
     # retrieve watcher for  literal
     watcher = sp.watch_list[index_of_literal(lit)]
 
-    # print("watching literal: " + str(lit))
-
     temp = []
 
     for clause in watcher.watched:
-
-        # print("clause: " + str(clause.c))
 
         if not lf.is_satisfied(clause, sp.a):
 
@@ -135,8 +131,6 @@ def watch_a_literal(lit, sp, level):
 
             # keep track of every literal that has been watched
             if clause.watched_and_move(sp.a) > 1:  # if there's more than one literal
-
-                # print("has been moved to")
 
                 temp.append(clause)
 
@@ -149,8 +143,6 @@ def watch_a_literal(lit, sp, level):
 
                 causes = [-1 * lit for lit in clause.c[1:]]
 
-                print("DEFININING CAUSED ASSIGNMENT BY :" + str(clause.c) + " " + str(clause.get_first_literal()))
-                # print("current ass: " + str(sp.a))
                 ag.define_assignment(clause.get_first_literal(), sp, causes, level, clause)
 
                 not_contradict, backtrack = watch_a_literal(clause.get_first_literal(), sp, level)
@@ -159,8 +151,6 @@ def watch_a_literal(lit, sp, level):
 
                     for item in temp:
                         watcher.watched.remove(item)
-
-                    print("going back to level " + str(backtrack.level))
                     return not_contradict, backtrack
 
             else:
@@ -168,7 +158,6 @@ def watch_a_literal(lit, sp, level):
                 for item in temp:
                     watcher.watched.remove(item)
 
-                print("contradiction found watching " + str(lit) + "on clause" + str(clause.c))
                 r = lf.assign_to_clause(clause, sp.a)
                 return CONTRADICT, cdcl.learning_clause(r, clause, sp, level)
 

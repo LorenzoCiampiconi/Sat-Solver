@@ -38,18 +38,12 @@ class AssignmentNode:
         """
 
         if self.var in node.causes and self.var not in seen:
-            # print("add " + str(node.var) + " to " + str(self.var))
+
             node.causes_list.append(self)
             self.add_caused(node)
             seen.append(self.var)
             i -= 1
-            # print("Now for ass: " +  str(self.var) + "is:")
 
-            '''
-            for n in self.caused_list:
-                # print(n.var)
-                
-            '''
 
         for caused in self.caused_list:
             if i == 0:
@@ -70,8 +64,6 @@ def define_assignment(val,  # value to be assigned
                       ):
 
     sp.assignments += 1
-
-    # print("assigning " + str(val) + " at level " + str(level))
 
     # add ass_node for CDCL if not fundamental assignment
     if not causes:
@@ -100,29 +92,18 @@ def add_to_caused(node,  # node of assignment to be added
 
 def retract_lower_level(sp, level):
 
-    # print("Retracting")
-
     temp = []
 
     for root in sp.r_a:
         if root.level > level:
 
             caused_original = root.caused_list[:]
-            # print("1st for " + str(root.var) + "going to retract caused:")
 
-            '''
-            for caused in root.caused_list:
-                print(str(caused.var))
-            '''
-
-            # print("remove " + str(root.var))
             temp.append(root)
             sp.a.remove(root.var)
             sp.n_a.append(abs(root.var))
 
-            # print("2nd for " + str(root.var) + "going to retract caused:")
             for caused in caused_original:
-                # print(str(caused.var))
                 retract_caused_assignment(caused, sp)
 
     for item in temp:
@@ -130,8 +111,6 @@ def retract_lower_level(sp, level):
 
 
 def retract_caused_assignment(assignment_node, sp):
-
-    # print("remove " + str(assignment_node.var))
 
     var = assignment_node.var
 
@@ -141,11 +120,9 @@ def retract_caused_assignment(assignment_node, sp):
 
     caused_list = assignment_node.caused_list[:]
 
-    # print("from " + str(assignment_node.var) + "retract also")
     for caused in caused_list:
         if caused in assignment_node.caused_list:
             retract_caused_assignment(caused, sp)
-            # print(caused.var)
 
     for cause in assignment_node.causes_list:
         if assignment_node in cause.caused_list:
@@ -180,9 +157,9 @@ def get_node_of_assignment(assignment_graph, literal):
 # ******************* DEBUGGING FUNCTION *********************
 def print_graph(r_a):
     for root in r_a:
-        # print("level: " + str(root.level) + "ass: " + str(root.var))
+        print("level: " + str(root.level) + "ass: " + str(root.var))
 
-        # if root.clause:
-            # print("caused by clause" + str(root.clause.c))
+        if root.clause:
+            print("caused by clause" + str(root.clause.c))
 
         print_graph(root.caused_list)

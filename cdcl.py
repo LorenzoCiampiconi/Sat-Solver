@@ -37,7 +37,6 @@ def learning_clause(r: list,
     :return:
     """
 
-
     # cutting the graph doing backward resolution, idea similar a to the one in minisat
     learnt_clause, levels, set = analyze_conflict(sp.r_a, clause, level)
 
@@ -61,8 +60,6 @@ def learning_clause(r: list,
 
     learnt_clause = Clause(learnt_clause)
     sp.formula.add_learnt_clause(learnt_clause, sp.a, sp.watch_list)
-
-    print(learnt_clause.c)
 
     # return an object which contains the level to backjump and the learnt clause
     return BacktrackPack(level, learnt_clause)
@@ -91,7 +88,6 @@ def analyze_conflict(r_a, clause, level):
                 resolution_on_analysis(r_a, node, seen, level, levels, learnt, set)
 
             elif node.level > 0:
-                print("add to learnt " + str(literal))
                 learnt.append(literal)
                 levels.append(node.level)
 
@@ -108,17 +104,13 @@ def resolution_on_analysis(r_a, node, seen, level, levels, learnt, set):
             found, next_node = ag.get_node_of_assignment_from_caused(r_a, -1 * c, node)
 
             if next_node.clause:
-                print("with clause " + str(next_node.clause.c))
 
                 set.append(node.clause)
 
                 if next_node.level >= level:
-                    print("solve on " + str(c))
-
                     resolution_on_analysis(r_a, next_node, seen, level, levels, learnt, set)
 
                 elif next_node.level > 0:
-                    print("add to learnt " + str(c))
                     learnt.append(c)
                     levels.append(next_node.level)
 
@@ -127,8 +119,6 @@ def resolution_on_analysis(r_a, node, seen, level, levels, learnt, set):
                     seen.append(-1 * next_node.var)
                     learnt.append(-1 * next_node.var)
                     levels.append(next_node.level)
-                    print("add to learnt " + str(-1 * node.var))
-                print("with no clause because heuristic assignment")
 
     return learnt
 

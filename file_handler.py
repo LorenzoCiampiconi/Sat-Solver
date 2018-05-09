@@ -17,23 +17,31 @@ def read_files(formula, input):
         read_input = read_path + query_list_file_name
 
     # open the file
-    with open(read_input, "r") as input_file:
+    try:
+        with open(read_input, "r") as input_file:
 
-        for line in input_file:
-            if line.startswith("c"):
-                print(line.partition("c")[2])
-            elif line.startswith("p cnf"):
-                words = line.split()
-                formula.v = int(words[2])
-                formula.nc = int(words[3])
+            for line in input_file:
+                if line.startswith("c"):
+                    string = line.partition("c")[2]
+                elif line.startswith("p cnf"):
+                    words = line.split()
+                    formula.v = int(words[2])
+                    formula.nc = int(words[3])
 
-            else:
-                clause = line.partition(" 0")[0]
-                clause = clause.split()
-                clause = Clause(list(set(map(int, clause))))
-                formula.clauses.append(clause)
+                else:
+                    clause = line.partition(" 0")[0]
+                    clause = clause.split()
+                    clause = Clause(list(set(map(int, clause))))
+                    formula.clauses.append(clause)
 
-    return formula
+        valid_input = True
+
+    except ValueError:
+        print("Wrong input")
+
+        valid_input = False
+
+    return formula, valid_input
 
 
 

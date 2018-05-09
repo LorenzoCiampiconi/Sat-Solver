@@ -40,7 +40,6 @@ def in_depth_assignment(var: int,
         # retracting subsequent assignments
         ag.retract_lower_level(sp, l)
 
-
         if backtrack.clause:
 
             wl.add_clause_to_watch_list(backtrack.clause, sp.watch_list, not wl.GENERATION, sp.a)
@@ -60,7 +59,6 @@ def in_depth_assignment(var: int,
 
             is_model, model, backtrack = in_depth_assignment(next_assignment, sp, l + 1)
 
-    # print("level " + str(l) + "" + "return: " + str(is_model))
     return is_model, model, backtrack
 
 
@@ -69,10 +67,7 @@ def branch(var: int,
            l: int,
            ):
 
-
     # assign for this branch
-    # print("starting branch: " + str(var))
-    # print("not assigned: " + str(sp.n_a))
     ag.define_assignment(var, sp, EMPTY, l, not ag.IS_CAUSED)  # causes is empty as it's a root assignment
 
     # induct assignment

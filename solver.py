@@ -84,7 +84,6 @@ def top_level_assignments(sp: SatProblem) -> tuple:
 
         while not is_model and backtrack.level == 0 and backtrack.clause.c != EMPTY_CLAUSE:
 
-
             ag.retract_lower_level(sp, level=TOP_LEVEL)
 
             backtrack.clause.watched_and_move(sp.a)
@@ -97,7 +96,6 @@ def top_level_assignments(sp: SatProblem) -> tuple:
 
                 if sp.n_a:
                     next_assignment = heuristic.pick_branching(sp)
-                    # print("next heuristic assigment = " + str(next_assignment))
                     is_model, model, backtrack = dp.in_depth_assignment(next_assignment, sp, FIRST_LEVEL)
 
                 else:
