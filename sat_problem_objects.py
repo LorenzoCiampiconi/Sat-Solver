@@ -37,6 +37,8 @@ class Clause:
         self.c = c
         self.n_ass = len(c)
         self.sat = False
+        self.set_of_clause = []
+        self.list_of_resol_proof = []
 
     def shuffle(self):
         self.c = random.sample(self.c, len(self.c))
