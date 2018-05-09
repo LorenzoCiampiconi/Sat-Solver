@@ -34,13 +34,15 @@ def solve(formula: Formula, ran):
     if is_model:
         print("A model has been found")
         print(model)
-        print("with " +  str(sat_problem.calls) + " calls of subroutine")
+        print("with " + str(sat_problem.calls) + " calls of subroutine")
         correct = check_solution(model, formula.clauses)
+        if correct:
+            print("Checked Solution!")
     else:
         correct = True
         print("Unsat")
+        print("with " + str(sat_problem.calls) + " calls of subroutine")
 
-    print(correct)
     return sat_problem.calls, sat_problem.assignments, correct
 
 

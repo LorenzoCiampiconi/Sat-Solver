@@ -105,7 +105,7 @@ def resolution_on_analysis(r_a, node, seen, level, levels, learnt, set):
     for c in clause:
         if c not in seen:
             seen.append(c)
-            found, next_node = ag.get_node_of_assignment(r_a, -1 * c)
+            found, next_node = ag.get_node_of_assignment_from_caused(r_a, -1 * c, node)
 
             if next_node.clause:
                 print("with clause " + str(next_node.clause.c))

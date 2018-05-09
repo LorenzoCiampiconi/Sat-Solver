@@ -152,6 +152,16 @@ def retract_caused_assignment(assignment_node, sp):
             cause.caused_list.remove(assignment_node)
 
 
+def get_node_of_assignment_from_caused(assignment_graph, literal, caused):
+
+    for node in caused.causes_list:
+
+        if node.var == literal:
+            return FOUND, node
+
+    return False, ''
+
+
 def get_node_of_assignment(assignment_graph, literal):
 
     for node in assignment_graph:

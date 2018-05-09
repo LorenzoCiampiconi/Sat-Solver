@@ -1,6 +1,6 @@
 # Define path and useful variables such as the separator used in the file to be queried
 read_path = "input-test-files"
-query_list_file_name = "/input-2"
+query_list_file_name = "/input-9"
 extension = ".cnf"
 sep = "\t"
 
@@ -8,16 +8,22 @@ from sat_problem_objects import Clause
 
 
 # This function get the formula from a file respecting DIMACS CNF standard
-def read_files(formula):
+def read_files(formula, input):
+
+    if input:
+        read_input = input
+
+    else:
+        read_input = read_path + query_list_file_name
 
     # open the file
-    with open(read_path + query_list_file_name, "r") as input_file:
+    with open(read_input, "r") as input_file:
 
         for line in input_file:
             if line.startswith("c"):
                 print(line.partition("c")[2])
             elif line.startswith("p cnf"):
-                words = line.split(" ")
+                words = line.split()
                 formula.v = int(words[2])
                 formula.nc = int(words[3])
 
