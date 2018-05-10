@@ -27,8 +27,9 @@ def solve(formula: Formula, ran):
     :param ran:
     :return:
     """
+
     # new sat_problem
-    sat_problem = SatProblem(formula, ran=ran)
+    sat_problem = SatProblem(formula, ran)
 
     # add watch list
     sat_problem.watch_list = wl.generate_watch_list(formula)

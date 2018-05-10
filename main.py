@@ -4,6 +4,8 @@ import sys
 import time
 from sat_problem_objects import Formula
 
+# false is the value that passed will make the sat NOT use the random pick-branching, but the actual heuristic
+USE_HEURISTIC = False
 
 def main():
     """
@@ -27,7 +29,7 @@ def main():
         print("Solving..." + "\n")
 
         t = time.time()
-        solver.solve(formula, False)
+        solver.solve(formula, USE_HEURISTIC)
         t = time.time() - t
 
         print("Total time: " + str(t) + " seconds")

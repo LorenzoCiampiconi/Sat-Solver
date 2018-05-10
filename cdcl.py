@@ -73,7 +73,8 @@ def analyze_conflict(r_a, clause, level):
 
     learnt = []
 
-    set = [clause]
+    # add to proof initial conflict clause
+    set_used_for_proof = [clause]
 
     for literal in c:
 
@@ -81,10 +82,8 @@ def analyze_conflict(r_a, clause, level):
             seen.append(literal)
             found, node = ag.get_node_of_assignment(r_a, -1 * literal)
 
-            if node.clause:
-                set.append(node.clause)
-
             if node.level >= level and node.clause:
+                set_used_for_proof.append(node.clause)
                 resolution_on_analysis(r_a, node, seen, level, levels, learnt)
 
             elif node.level > 0:

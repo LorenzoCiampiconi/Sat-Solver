@@ -31,6 +31,7 @@ class SatProblem:
         self.random = ran
 
 
+
 class Clause:
 
     def __init__(self, c):

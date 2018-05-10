@@ -50,17 +50,13 @@ def original_pick_branching(sat_problem):
     for weighter in weighters:
         for clause in sat_problem.formula.clauses:
             if weighter.lit in clause.c:
-                weighter.weight += float(1 / (clause.n_ass + 1))
+                weighter.weight += float(1.0 / (1 + clause.n_ass))
 
-    weighters.sort(key=lambda elem: elem.weight, reverse=True)
+    max = weighters[0]
 
-    return weighters[0].lit
+    for weighter in weighters:
+        if weighter.weight > max.weight:
+            max = weighter
 
-
-def choose_assignment_from_backtracking(clause, n_a):
-
-    for c in clause:
-
-        if abs(c) in n_a:
-            return c
+    return max.lit
 

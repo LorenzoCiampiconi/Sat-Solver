@@ -1,6 +1,6 @@
 # Define path and useful variables such as the separator used in the file to be queried
 read_path = "input-test-files"
-query_list_file_name = "/input-2"
+query_list_file_name = "/input-9"
 extension = ".cnf"
 sep = "\t"
 
