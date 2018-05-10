@@ -37,7 +37,7 @@ def generate_cnf_file(n, r, k):
 
     formula = generate_formula(n, r, k)
 
-    write_cnf_file(formula, n, int(r*n), directory)
+    write_cnf_file(formula, n, int(r*n), EMPTY_DIR)
 
 
 def write_cnf_file(formula, n, c, directory):
